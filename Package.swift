@@ -1,4 +1,5 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
+// 6.2: Waveform 의 @concurrent 가 Swift 6.2 부터 지원된다
 import PackageDescription
 
 let package = Package(

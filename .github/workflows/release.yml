@@ -1,0 +1,82 @@
+# 앱이 바뀐 커밋이 main 에 들어오면 빌드해서 DMG 를 GitHub Releases 에 올린다.
+# 버전은 마지막 릴리스 태그 뒤의 커밋 메시지(Conventional Commits)로 정한다 — scripts/next-version.sh
+name: Release
+
+on:
+  push:
+    branches: [main]
+    # 앱 결과물에 영향을 주는 파일만. 문서·테스트만 바뀌면 돌지 않는다 (아래 APP_PATHS 와 같게 유지)
+    paths:
+      - "Sources/**"
+      - "Package.swift"
+      - "build.sh"
+      - "scripts/make-icon.swift"
+      - "scripts/make-dmg.sh"
+  workflow_dispatch:
+
+permissions:
+  contents: write # 태그와 릴리스 만들기
+
+# 연달아 돌면 같은 버전을 두 번 만들 수 있어 한 줄로 세운다
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash # bash --noprofile --norc -eo pipefail
+
+jobs:
+  release:
+    runs-on: macos-26
+    env:
+      APP_NAME: iPhoneRingtones # build.sh 의 APP_NAME 과 같게 유지
+      APP_PATHS: Sources Package.swift build.sh scripts/make-icon.swift scripts/make-dmg.sh
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # 태그와 커밋 기록으로 다음 버전을 계산한다
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Decide version
+        id: version
+        run: |
+          scripts/next-version-test.sh
+          last_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
+          changes=""
+          if [[ -n "$last_tag" ]]; then
+            # APP_PATHS 를 경로 목록으로 펼치려고 따옴표 없이 쓴다
+            changes="$(git log --format=%B "$last_tag"..HEAD -- $APP_PATHS)"
+            if [[ -z "$changes" ]]; then
+              echo "마지막 릴리스($last_tag) 이후 앱 변경이 없어 건너뜁니다."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          version="$(printf '%s' "$changes" | scripts/next-version.sh "${last_tag#v}")"
+          echo "다음 버전: $version (마지막 릴리스: ${last_tag:-없음})"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        if: steps.version.outputs.skip != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: ./build.sh
+
+      - name: Publish release
+        if: steps.version.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          dmg="build/$APP_NAME-$VERSION.dmg"
+          mv "build/$APP_NAME.dmg" "$dmg"
+          gh release create "v$VERSION" "$dmg" \
+            --target "$GITHUB_SHA" \
+            --title "$APP_NAME $VERSION" \
+            --notes "DMG 를 열고 $APP_NAME 을 Applications 로 끌어 설치하세요. 공증받지 않은 앱이라 처음 실행이 막히면 시스템 설정 → 개인정보 보호 및 보안에서 \"그래도 열기\"를 누르세요." \
+            --generate-notes
