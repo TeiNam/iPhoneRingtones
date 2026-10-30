@@ -5,7 +5,9 @@ set -euo pipefail
 
 APP_NAME="iPhoneRingtones"
 BUNDLE_ID="dev.rastalion.iPhoneRingtones"
-VERSION="1.0.0"
+# 릴리스 워크플로는 VERSION 을 넘긴다. 로컬 빌드는 마지막 릴리스 태그(없으면 1.0.0)를 쓴다
+VERSION="${VERSION:-$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null | sed 's/^v//' || true)}"
+VERSION="${VERSION:-1.0.0}"
 MIN_MACOS="15.0" # Package.swift 의 platforms(.macOS(.v15)) 와 같게 유지
 PRODUCT="iPhoneRingtones" # Package.swift 의 executableTarget 이름 = swift build 가 만드는 실행 파일 이름
 

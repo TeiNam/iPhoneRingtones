@@ -1,9 +1,10 @@
 # iPhoneRingtones
 
-![Swift](https://img.shields.io/badge/Swift-6.0-F05138.svg)
+![Swift](https://img.shields.io/badge/Swift-6.2-F05138.svg)
 ![SwiftUI](https://img.shields.io/badge/SwiftUI-macOS%2015%2B-0D96F6.svg)
 ![AVFoundation](https://img.shields.io/badge/AVFoundation-Audio-555555.svg)
 ![Universal](https://img.shields.io/badge/Universal-arm64%20%7C%20x86__64-000000.svg)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI/CD-2088FF.svg)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/teinam)
@@ -24,7 +25,7 @@ Xcode 없이 Command Line Tools 만으로 빌드합니다.
 ## 요구 사항
 
 - macOS 15 이상 (Apple Silicon 과 Intel 을 모두 지원하는 Universal 앱)
-- 빌드할 때: Xcode Command Line Tools. Swift 6.4.2 / macOS 27.2 SDK 에서 확인했습니다. 설치되어 있지 않으면 `xcode-select --install` 로 설치합니다.
+- 빌드할 때: Xcode Command Line Tools (Swift 6.2 이상). Swift 6.4.2 / macOS 27.2 SDK 에서 확인했습니다. 설치되어 있지 않으면 `xcode-select --install` 로 설치합니다.
 
 ## 빌드와 실행
 
@@ -41,16 +42,32 @@ open build/iPhoneRingtones.app
 4. Info.plist 를 포함한 `.app` 번들을 만들고 ad-hoc 서명합니다.
 5. `scripts/make-dmg.sh` 가 앱과 Applications 바로가기를 담은 배포용 DMG 를 만듭니다.
 
-앱 이름·번들 ID·버전은 `build.sh` 맨 위의 변수에서 바꿀 수 있습니다.
+앱 이름과 번들 ID 는 `build.sh` 맨 위의 변수에서 바꿀 수 있습니다. 버전은 마지막 릴리스 태그를 따릅니다 (태그가 없으면 1.0.0).
 
 ## 설치
 
-1. `build/iPhoneRingtones.dmg` 를 엽니다.
+1. [Releases](https://github.com/TeiNam/iPhoneRingtones/releases/latest) 에서 최신 `iPhoneRingtones-x.y.z.dmg` 를 내려받거나, 직접 빌드한 `build/iPhoneRingtones.dmg` 를 엽니다.
 2. 창에 보이는 `iPhoneRingtones` 를 옆의 `Applications` 폴더로 끌어다 놓습니다.
 3. 응용 프로그램 폴더나 Launchpad 에서 실행합니다.
 
 > Apple 공증(notarization)을 받지 않은 앱이라, DMG 를 다른 Mac 으로 내려받아 처음 실행하면 macOS 가 실행을 막습니다.
 > 시스템 설정 → 개인정보 보호 및 보안 아래쪽의 "그래도 열기"를 누르면 실행됩니다. 직접 빌드한 Mac 에서는 바로 실행됩니다.
+
+## 자동 릴리스
+
+`main` 에 앱 코드가 바뀐 커밋이 들어오면 GitHub Actions(`.github/workflows/release.yml`)가 macOS 러너에서 `./build.sh` 를 실행하고, DMG 를 [Releases](https://github.com/TeiNam/iPhoneRingtones/releases) 에 올립니다.
+
+- `Sources/`, `Package.swift`, `build.sh`, `scripts/make-icon.swift`, `scripts/make-dmg.sh` 가 바뀔 때만 동작합니다. README, LICENSE, 테스트만 바뀌면 동작하지 않습니다.
+- 버전은 마지막 릴리스 이후의 커밋 메시지([Conventional Commits](https://www.conventionalcommits.org/ko/v1.0.0/))로 정합니다 (`scripts/next-version.sh`).
+
+| 커밋 | 예 | 버전 변화 |
+|------|----|-----------|
+| 첫 릴리스 | | 1.0.0 |
+| `feat!:` 또는 본문의 `BREAKING CHANGE` | `feat!: 설정 형식 변경` | 1.4.2 → **2**.0.0 |
+| `feat:` | `feat: 파형 확대` | 1.4.2 → 1.**5**.0 |
+| 그 밖 (`fix:`, `refactor:` 등) | `fix: 페이드 길이 오류` | 1.4.2 → 1.4.**3** |
+
+Actions 탭의 Release 워크플로에서 "Run workflow" 로 직접 실행할 수도 있습니다. 마지막 릴리스 이후 앱 변경이 없으면 건너뜁니다.
 
 ## 사용법
 
@@ -83,6 +100,8 @@ Sources/iPhoneRingtones/
 Tests/iPhoneRingtonesTests/    Swift Testing 테스트
 scripts/make-icon.swift        앱 아이콘 생성
 scripts/make-dmg.sh            배포용 DMG 생성
+scripts/next-version.sh        다음 릴리스 버전 계산 (검사: next-version-test.sh)
+.github/workflows/release.yml  앱 변경 시 DMG 를 Releases 에 올리는 워크플로
 build.sh                       .app 번들·DMG 빌드 스크립트
 LICENSE                        CC BY-NC-SA 4.0 원문
 ```
