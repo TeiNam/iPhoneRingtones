@@ -2,8 +2,8 @@ import Foundation
 
 /// 벨소리로 잘라낼 구간(초 단위) 입력을 검증한다.
 enum RingtoneRange {
-    /// 벨소리 최대 길이. iPhone 은 전통적으로 40초까지만 벨소리로 받아 왔으니 40초 초과분은 기기에서 확인할 것
-    static let maxLength: TimeInterval = 60
+    /// iPhone 벨소리 최대 길이
+    static let maxLength: TimeInterval = 40
     /// 0.1초 단위 입력을 빼고 더할 때 생기는 부동소수점 오차 허용치
     private static let tolerance: TimeInterval = 0.001
 

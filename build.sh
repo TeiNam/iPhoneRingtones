@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # iPhoneRingtones.app 빌드 — Xcode 없이 Command Line Tools 만으로 arm64 + x86_64 Universal 번들을 만든다.
-# 사용법: ./build.sh   →   테스트 후 build/iPhoneRingtones.app 생성
+# 사용법: ./build.sh   →   테스트 후 build/iPhoneRingtones.app 과 배포용 build/iPhoneRingtones.dmg 생성
 set -euo pipefail
 
 APP_NAME="iPhoneRingtones"
@@ -54,4 +54,7 @@ plutil -lint "$APP_DIR/Contents/Info.plist"
 codesign --force --sign - "$APP_DIR"
 codesign --verify --strict "$APP_DIR"
 
-echo "완료: $APP_DIR ($(lipo -archs "$APP_DIR/Contents/MacOS/$APP_NAME"))"
+DMG="build/$APP_NAME.dmg"
+scripts/make-dmg.sh "$APP_DIR" "$DMG"
+
+echo "완료: $APP_DIR ($(lipo -archs "$APP_DIR/Contents/MacOS/$APP_NAME")), $DMG"
