@@ -14,8 +14,8 @@ struct RingtoneRangeTests {
     }
 
     @Test func allowsExactlyMaxLengthDespiteFloatingPointError() {
-        // 64.4 - 4.4 는 부동소수점으로 60.00000000000001 이 된다
-        #expect((try? RingtoneRange.validate(start: "4.4", end: "64.4", duration: 100).get()) != nil)
+        // 64.4 - 24.4 는 부동소수점으로 40.00000000000001 이 된다
+        #expect((try? RingtoneRange.validate(start: "24.4", end: "64.4", duration: 100).get()) != nil)
     }
 
     @Test(arguments: [
@@ -24,7 +24,7 @@ struct RingtoneRangeTests {
         ("0", "inf", .notANumber),
         ("5", "5", .endNotAfterStart),
         ("120", "130", .endNotAfterStart),
-        ("0", "60.2", .tooLong),
+        ("0", "40.2", .tooLong),
     ])
     func rejectsInvalidInput(start: String, end: String, problem: RingtoneRange.Problem) {
         #expect(RingtoneRange.validate(start: start, end: end, duration: 100) == .failure(problem))
